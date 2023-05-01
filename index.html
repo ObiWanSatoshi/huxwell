@@ -2,8 +2,8 @@
 <html>
   <head>
     <title>Huxwell</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
       @font-face {
         font-family: 'Inter Light';
@@ -14,24 +14,13 @@
         background-color: black;
         color: white;
         font-family: 'Inter Light', sans-serif;
-        margin-bottom: 50px;
+        margin-bottom: 300px;
       }
 
       .header {
         text-align: center;
         margin-top: 35px;
         font-size: 20px;
-      }
-
-      .header img {
-        display: block;
-        margin: 0 auto;
-        max-width: 100%;
-      }
-
-      .header p {
-        margin-top: 20px;
-        font-size: 16px;
       }
 
       .logo {
@@ -50,20 +39,10 @@
         font-size: 13px;
       }
 
-      /* Adjustments for mobile devices */
-      @media screen and (max-width: 600px) {
+      @media (max-width: 767px) {
         .header {
+          font-size: 16px;
           margin-top: 20px;
-          font-size: 12px;
-        }
-
-        .header img {
-          margin-top: 10px;
-        }
-
-        .header p {
-          margin-top: 10px;
-          font-size: 9px;
         }
 
         .logo img {
@@ -71,7 +50,8 @@
         }
 
         .footer {
-          margin-top: 100px;
+          font-size: 11px;
+          margin-top: 20px;
         }
       }
     </style>
@@ -90,6 +70,5 @@
     <div class="footer">
       <p>info@huxwell.co.uk</a></p>
     </div>
-
   </body>
 </html>
