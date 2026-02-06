@@ -1,5 +1,5 @@
-import { useRef, useEffect } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { ScrollControls, useScroll } from '@react-three/drei'
 import * as THREE from 'three'
 import EarthScene from './EarthScene'
@@ -15,70 +15,46 @@ function ScrollTracker({ scrollProgress }) {
   return null
 }
 
-function SceneContent({ mode, scrollProgress, transitionProgress }) {
+function SceneContent({ mode, scrollProgress, mouse }) {
   const earthRef = useRef()
   const brainRef = useRef()
+  const earthScale = useRef(mode === 'world' ? 1 : 0)
+  const brainScale = useRef(mode === 'mind' ? 1 : 0)
 
   useFrame(() => {
+    const earthTarget = mode === 'world' ? 1 : 0
+    const brainTarget = mode === 'mind' ? 1 : 0
+
+    earthScale.current = THREE.MathUtils.lerp(earthScale.current, earthTarget, 0.04)
+    brainScale.current = THREE.MathUtils.lerp(brainScale.current, brainTarget, 0.04)
+
     if (earthRef.current) {
-      const earthOpacity = mode === 'world' ? 1 : 0
-      earthRef.current.visible = transitionProgress.current > 0.01
-      earthRef.current.scale.setScalar(
-        THREE.MathUtils.lerp(earthRef.current.scale.x, earthOpacity, 0.05)
-      )
+      earthRef.current.scale.setScalar(earthScale.current)
+      earthRef.current.visible = earthScale.current > 0.01
     }
     if (brainRef.current) {
-      const brainOpacity = mode === 'mind' ? 1 : 0
-      brainRef.current.visible = transitionProgress.current < 0.99
-      brainRef.current.scale.setScalar(
-        THREE.MathUtils.lerp(brainRef.current.scale.x, brainOpacity, 0.05)
-      )
+      brainRef.current.scale.setScalar(brainScale.current)
+      brainRef.current.visible = brainScale.current > 0.01
     }
   })
 
   return (
     <>
       <group ref={earthRef}>
-        <EarthScene scrollProgress={scrollProgress} />
+        <EarthScene scrollProgress={scrollProgress} mouse={mouse} />
       </group>
       <group ref={brainRef} scale={0}>
-        <BrainScene scrollProgress={scrollProgress} />
+        <BrainScene scrollProgress={scrollProgress} mouse={mouse} />
       </group>
     </>
   )
 }
 
-export default function SceneContainer({ mode, scrollProgress }) {
-  const transitionProgress = useRef(mode === 'world' ? 1 : 0)
-
-  useEffect(() => {
-    // Track target for smooth transition
-    const target = mode === 'world' ? 1 : 0
-    const animate = () => {
-      transitionProgress.current = THREE.MathUtils.lerp(
-        transitionProgress.current,
-        target,
-        0.05
-      )
-      if (Math.abs(transitionProgress.current - target) > 0.001) {
-        requestAnimationFrame(animate)
-      }
-    }
-    animate()
-  }, [mode])
-
+export default function SceneContainer({ mode, scrollProgress, mouse }) {
   return (
-    <ScrollControls pages={3} damping={0.25}>
+    <ScrollControls pages={3} damping={0.3}>
       <ScrollTracker scrollProgress={scrollProgress} />
-      <SceneContent
-        mode={mode}
-        scrollProgress={scrollProgress}
-        transitionProgress={transitionProgress}
-      />
-
-      {/* Ambient lighting */}
-      <ambientLight intensity={0.3} />
-      <pointLight position={[10, 10, 10]} intensity={0.5} />
+      <SceneContent mode={mode} scrollProgress={scrollProgress} mouse={mouse} />
     </ScrollControls>
   )
 }
