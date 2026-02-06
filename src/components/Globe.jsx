@@ -26,7 +26,7 @@ export default function Globe() {
       <group ref={groupRef}>
         {/* Primary wireframe globe */}
         <mesh>
-          <icosahedronGeometry args={[2, 2]} />
+          <icosahedronGeometry args={[1.6, 2]} />
           <meshBasicMaterial
             wireframe
             color="#ffffff"
@@ -37,7 +37,7 @@ export default function Globe() {
 
         {/* Inner structure for depth */}
         <mesh>
-          <icosahedronGeometry args={[1.95, 1]} />
+          <icosahedronGeometry args={[1.56, 1]} />
           <meshBasicMaterial
             wireframe
             color="#ffffff"
