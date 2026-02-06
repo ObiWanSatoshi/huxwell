@@ -6,8 +6,8 @@ import {
   brainFragmentShader,
 } from '../shaders/brainShaders'
 
-const BRAIN_PARTICLES = 2000
-const TRANSISTOR_PARTICLES = 800
+const BRAIN_PARTICLES = 1800
+const TRANSISTOR_PARTICLES = 600
 const TOTAL = BRAIN_PARTICLES + TRANSISTOR_PARTICLES
 
 function generateBrainPoint() {
@@ -18,30 +18,41 @@ function generateBrainPoint() {
   let y = Math.sin(phi) * Math.sin(theta)
   let z = Math.cos(phi)
 
-  x *= 1.3
+  // Brain proportions: wider, shorter
+  x *= 1.35
   y *= 1.05
-  z *= 1.0
+  z *= 1.15
 
-  if (x > 0) x += 0.06
-  else x -= 0.06
+  // Hemisphere split
+  x += x > 0 ? 0.07 : -0.07
 
-  if (z > 0.3) {
-    const bulge = 1.0 + 0.25 * Math.exp(-((z - 0.8) ** 2) * 4)
-    x *= bulge
-    y *= bulge
+  // Flatten top
+  if (y > 0.7) y *= 0.85
+
+  // Frontal lobe bulge
+  if (z > 0.4) {
+    const f = 1.0 + 0.2 * Math.exp(-(z - 0.7) * (z - 0.7) * 5)
+    x *= f
   }
 
-  if (y < -0.2) {
-    const bulge = 1.0 + 0.15 * Math.exp(-((y + 0.6) ** 2) * 5)
-    x *= bulge
-    z *= bulge
+  // Temporal lobe
+  if (y < -0.3 && Math.abs(x) > 0.5) {
+    const t = 1.0 + 0.15 * Math.exp(-(y + 0.5) * (y + 0.5) * 4)
+    z *= t
   }
 
-  const wrinkle = Math.sin(x * 10) * Math.sin(y * 8) * Math.sin(z * 6) * 0.1
+  // Cerebellum (back-bottom)
+  if (z < -0.5 && y < -0.2) {
+    const c = 1.0 + 0.2 * Math.exp(-(z + 0.7) * (z + 0.7) * 4 - (y + 0.4) * (y + 0.4) * 3)
+    x *= c * 0.8
+  }
+
+  // Surface folds (sulci/gyri)
   const r = Math.sqrt(x * x + y * y + z * z)
-  const scale = (r + wrinkle) / (r || 1)
+  const fold = Math.sin(x * 8) * Math.cos(y * 6) * Math.sin(z * 7) * 0.08
+  const s = (r + fold) / (r || 1)
 
-  return [x * scale, y * scale, z * scale]
+  return [x * s, y * s, z * s]
 }
 
 export default function BrainScene({ scrollProgress, mouse }) {
@@ -49,29 +60,38 @@ export default function BrainScene({ scrollProgress, mouse }) {
   const rotX = useRef(0)
   const rotY = useRef(0)
 
-  const { positions, randoms, phases, isTransistors } = useMemo(() => {
+  const { positions, randoms, phases, isTransistors, isSurface } = useMemo(() => {
     const pos = []
     const rand = new Float32Array(TOTAL)
     const ph = new Float32Array(TOTAL)
     const trans = new Float32Array(TOTAL)
+    const surf = new Float32Array(TOTAL)
 
+    // Brain particles: 70% surface (clear silhouette), 30% interior (atmosphere)
+    const surfaceCount = Math.floor(BRAIN_PARTICLES * 0.7)
     for (let i = 0; i < BRAIN_PARTICLES; i++) {
       const [bx, by, bz] = generateBrainPoint()
-      const rFrac = Math.cbrt(Math.random())
+      const onSurface = i < surfaceCount
+      const rFrac = onSurface
+        ? 0.85 + Math.random() * 0.15
+        : Math.cbrt(Math.random()) * 0.85
       pos.push(bx * rFrac, by * rFrac, bz * rFrac)
       rand[i] = Math.random()
       ph[i] = Math.random() * Math.PI * 2
       trans[i] = 0.0
+      surf[i] = onSurface ? 1.0 : 0.0
     }
 
+    // Transistor particles: on surface, protrude on scroll
     for (let i = 0; i < TRANSISTOR_PARTICLES; i++) {
       const idx = BRAIN_PARTICLES + i
       const [bx, by, bz] = generateBrainPoint()
-      const surfaceBias = 0.85 + Math.random() * 0.25
+      const surfaceBias = 0.88 + Math.random() * 0.2
       pos.push(bx * surfaceBias, by * surfaceBias, bz * surfaceBias)
       rand[idx] = Math.random()
       ph[idx] = Math.random() * Math.PI * 2
       trans[idx] = 1.0
+      surf[idx] = 1.0
     }
 
     return {
@@ -79,17 +99,15 @@ export default function BrainScene({ scrollProgress, mouse }) {
       randoms: rand,
       phases: ph,
       isTransistors: trans,
+      isSurface: surf,
     }
   }, [])
 
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uScrollProgress: { value: 0 },
-      uMouse: { value: new THREE.Vector2(0, 0) },
-    }),
-    []
-  )
+  const uniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uScrollProgress: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0, 0) },
+  }), [])
 
   useFrame((state) => {
     const t = state.clock.elapsedTime
@@ -100,9 +118,8 @@ export default function BrainScene({ scrollProgress, mouse }) {
     uniforms.uScrollProgress.value = scrollProgress.current
     uniforms.uMouse.value.set(mx, my)
 
-    // Smooth cursor-driven tilt
     const targetRotX = Math.sin(t * 0.2) * 0.08 + my * 0.15
-    const targetRotY = t * 0.06 + mx * 0.3
+    const targetRotY = t * 0.06 + mx * 0.25
     rotX.current = THREE.MathUtils.lerp(rotX.current, targetRotX, 0.03)
     rotY.current = THREE.MathUtils.lerp(rotY.current, targetRotY, 0.03)
 
@@ -113,13 +130,14 @@ export default function BrainScene({ scrollProgress, mouse }) {
   })
 
   return (
-    <group ref={groupRef} scale={1.4}>
+    <group ref={groupRef} scale={1.5}>
       <points>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" array={positions} count={TOTAL} itemSize={3} />
           <bufferAttribute attach="attributes-aRandom" array={randoms} count={TOTAL} itemSize={1} />
           <bufferAttribute attach="attributes-aPhase" array={phases} count={TOTAL} itemSize={1} />
           <bufferAttribute attach="attributes-aIsTransistor" array={isTransistors} count={TOTAL} itemSize={1} />
+          <bufferAttribute attach="attributes-aIsSurface" array={isSurface} count={TOTAL} itemSize={1} />
         </bufferGeometry>
         <shaderMaterial
           vertexShader={brainVertexShader}

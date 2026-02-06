@@ -10,33 +10,33 @@ export const earthVertexShader = `
     vec3 pos = position;
 
     // Subtle organic drift
-    float wobble = sin(uTime * 0.3 + aPhase) * 0.015;
+    float wobble = sin(uTime * 0.3 + aPhase) * 0.02;
     pos += normal * wobble;
 
-    // Mouse attraction: particles near cursor get a slight pull
-    vec4 projected = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-    vec2 screenPos = projected.xy / projected.w;
-    float mouseDist = length(screenPos - uMouse);
-    float attraction = smoothstep(0.8, 0.0, mouseDist) * 0.12;
-    pos += normal * attraction;
+    // Mouse attraction — particles near cursor bloom outward and glow
+    vec4 proj = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    vec2 screen = proj.xy / proj.w;
+    float mDist = length(screen - uMouse);
+    float attract = smoothstep(0.7, 0.0, mDist) * 0.15;
+    pos += normal * attract;
 
-    // After 50% scroll: particles drift outward into orbit
-    float orbitProgress = smoothstep(0.45, 1.0, uScrollProgress);
-    float liftOff = orbitProgress * aRandom * aRandom * 2.0;
-    pos += normal * liftOff;
+    // After 50% scroll: orbital drift
+    float orbit = smoothstep(0.45, 1.0, uScrollProgress);
+    float lift = orbit * aRandom * aRandom * 1.8;
+    pos += normal * lift;
 
-    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-    gl_Position = projectionMatrix * mvPosition;
+    vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+    gl_Position = projectionMatrix * mvPos;
 
-    // Point size — slightly larger near mouse
-    float size = mix(1.2, 2.0, aRandom) + attraction * 3.0;
-    gl_PointSize = size * (250.0 / -mvPosition.z);
+    // Clearly visible point size
+    float size = mix(2.0, 3.5, aRandom) + attract * 5.0;
+    gl_PointSize = size * (300.0 / -mvPos.z);
 
-    // Alpha — brighter near mouse
-    float baseAlpha = 0.15 + 0.2 * aRandom;
-    float scrollBoost = smoothstep(0.0, 0.4, uScrollProgress) * 0.15;
-    float mouseGlow = attraction * 2.0;
-    vAlpha = baseAlpha + scrollBoost + mouseGlow - liftOff * 0.08;
+    // Strong alpha — particles must be VISIBLE
+    float base = 0.3 + 0.35 * aRandom;
+    float mouseGlow = attract * 3.0;
+    float scrollBoost = smoothstep(0.0, 0.3, uScrollProgress) * 0.1;
+    vAlpha = base + scrollBoost + mouseGlow - lift * 0.1;
   }
 `;
 
@@ -44,10 +44,11 @@ export const earthFragmentShader = `
   varying float vAlpha;
 
   void main() {
-    float dist = length(gl_PointCoord - vec2(0.5));
-    if (dist > 0.5) discard;
+    float d = length(gl_PointCoord - vec2(0.5));
+    if (d > 0.5) discard;
 
-    float alpha = smoothstep(0.5, 0.15, dist) * clamp(vAlpha, 0.0, 0.6);
+    // Soft glow with bright center
+    float alpha = smoothstep(0.5, 0.05, d) * clamp(vAlpha, 0.0, 0.9);
     gl_FragColor = vec4(1.0, 1.0, 1.0, alpha);
   }
 `;
