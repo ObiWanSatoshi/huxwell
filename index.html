@@ -1,83 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta name="description" content="Investing in the evolution of the web—freedom, privacy, immersion.">
-    <title>Huxwell</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <style>
-      @font-face {
-        font-family: 'Inter Light';
-        src: url('fonts/Inter-Light.ttf') format('truetype');
-      }
-
-      body {
-        background-color: black;
-        color: white;
-        font-family: 'Inter Light', sans-serif;
-        margin-bottom: 300px;
-      }
-
-      .header {
-        text-align: center;
-        margin-top: 35px;
-        font-size: 17px;
-      }
-
-      .logo {
-        text-align: center;
-        margin-top: 50px;
-      }
-
-      .logo img {
-        display: inline-block;
-        max-width: 30%;
-      }
-
-      .footer {
-        text-align: center;
-        margin-top: 50px;
-        font-size: 13px;
-      }
-
-      @media (max-width: 600px) {
-        .header {
-          font-size: 16px;
-        }
-        
-        .header img {
-          max-width: 70%;
-          width: 69%;
-        }
-
-        .header p {
-          font-size: 13px;
-        }
-
-        .logo img {
-          max-width: 50%;
-          width: 21%;
-        }
-
-        .footer {
-          font-size: 10px;
-        }
-      }
-    </style>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Investing in the evolution of the web—freedom, privacy, immersion." />
+    <title>huXwell</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&display=swap" rel="stylesheet" />
   </head>
-
   <body>
-    <div class="header">
-      <img src="huxwell.png" width="30%">
-      <p>Investing in the evolution of the web—freedom, privacy, immersion.</p>
-    </div>
-
-    <div class="logo">
-      <img src="eyes.png" width="7%">
-    </div>
-
-    <div class="footer">
-      <p>info@huxwell.co.uk</a></p>
-    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
