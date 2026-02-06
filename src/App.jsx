@@ -31,7 +31,7 @@ export default function App() {
           <img
             src="/huxwell.png"
             alt="huXwell"
-            className="h-5 md:h-7 w-auto"
+            className="h-14 md:h-20 w-auto"
             style={{ filter: 'brightness(0) invert(1)' }}
           />
           <img
@@ -44,17 +44,17 @@ export default function App() {
 
         {/* Bottom Center — Tagline + Contact */}
         <motion.div
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+          className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5, duration: 1.2 }}
         >
-          <p className="text-[10px] md:text-xs tracking-[0.15em] text-white/25 text-center">
+          <p className="text-xs md:text-sm tracking-[0.15em] text-white text-center">
             Investing in the future of the web&mdash;freedom, privacy, immersion.
           </p>
           <a
             href="mailto:info@huxwell.co.uk"
-            className="text-[9px] tracking-[0.25em] uppercase text-white/15 hover:text-white/40 transition-colors pointer-events-auto"
+            className="text-[10px] md:text-xs tracking-[0.25em] uppercase text-white/60 hover:text-white transition-colors pointer-events-auto"
           >
             info@huxwell.co.uk
           </a>
