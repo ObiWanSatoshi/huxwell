@@ -7,11 +7,9 @@ import BrainScene from './BrainScene'
 
 function ScrollTracker({ scrollProgress }) {
   const scroll = useScroll()
-
   useFrame(() => {
     scrollProgress.current = scroll.offset
   })
-
   return null
 }
 
@@ -22,11 +20,11 @@ function SceneContent({ mode, scrollProgress, mouse }) {
   const brainScale = useRef(mode === 'mind' ? 1 : 0)
 
   useFrame(() => {
-    const earthTarget = mode === 'world' ? 1 : 0
-    const brainTarget = mode === 'mind' ? 1 : 0
+    const eTarget = mode === 'world' ? 1 : 0
+    const bTarget = mode === 'mind' ? 1 : 0
 
-    earthScale.current = THREE.MathUtils.lerp(earthScale.current, earthTarget, 0.04)
-    brainScale.current = THREE.MathUtils.lerp(brainScale.current, brainTarget, 0.04)
+    earthScale.current = THREE.MathUtils.lerp(earthScale.current, eTarget, 0.04)
+    brainScale.current = THREE.MathUtils.lerp(brainScale.current, bTarget, 0.04)
 
     if (earthRef.current) {
       earthRef.current.scale.setScalar(earthScale.current)

@@ -6,7 +6,7 @@ import {
   earthFragmentShader,
 } from '../shaders/earthShaders'
 
-const PARTICLE_COUNT = 2000
+const NODE_COUNT = 800
 const EARTH_RADIUS = 2.0
 
 function fibonacciSphere(count, radius) {
@@ -15,10 +15,10 @@ function fibonacciSphere(count, radius) {
   const goldenAngle = Math.PI * (3 - Math.sqrt(5))
   for (let i = 0; i < count; i++) {
     const y = 1 - (i / (count - 1)) * 2
-    const radiusAtY = Math.sqrt(1 - y * y)
+    const r = Math.sqrt(1 - y * y)
     const theta = goldenAngle * i
-    const x = Math.cos(theta) * radiusAtY
-    const z = Math.sin(theta) * radiusAtY
+    const x = Math.cos(theta) * r
+    const z = Math.sin(theta) * r
     positions.push(x * radius, y * radius, z * radius)
     normals.push(x, y, z)
   }
@@ -31,31 +31,30 @@ export default function EarthScene({ scrollProgress, mouse }) {
   const rotY = useRef(0)
 
   const { positions, normals, randoms, phases, linePositions } = useMemo(() => {
-    const { positions: pos, normals: nrm } = fibonacciSphere(PARTICLE_COUNT, EARTH_RADIUS)
-    const rand = new Float32Array(PARTICLE_COUNT)
-    const ph = new Float32Array(PARTICLE_COUNT)
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const { positions: pos, normals: nrm } = fibonacciSphere(NODE_COUNT, EARTH_RADIUS)
+    const rand = new Float32Array(NODE_COUNT)
+    const ph = new Float32Array(NODE_COUNT)
+    for (let i = 0; i < NODE_COUNT; i++) {
       rand[i] = Math.random()
       ph[i] = Math.random() * Math.PI * 2
     }
 
-    // Sparse connection lines
+    // Sparse connection lines between nearby nodes
     const lines = []
-    const posArr = []
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      posArr.push([pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]])
-    }
-    let lineCount = 0
-    const maxLines = 300
-    for (let i = 0; i < PARTICLE_COUNT && lineCount < maxLines; i += 3) {
-      for (let j = i + 1; j < PARTICLE_COUNT && lineCount < maxLines; j += 3) {
+    const posArr = Array.from({ length: NODE_COUNT }, (_, i) => [
+      pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]
+    ])
+    let count = 0
+    const maxLines = 350
+    for (let i = 0; i < NODE_COUNT && count < maxLines; i += 2) {
+      for (let j = i + 1; j < NODE_COUNT && count < maxLines; j += 2) {
         const dx = posArr[i][0] - posArr[j][0]
         const dy = posArr[i][1] - posArr[j][1]
         const dz = posArr[i][2] - posArr[j][2]
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
-        if (dist < 0.5 && dist > 0.15) {
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz)
+        if (d > 0.2 && d < 0.55) {
           lines.push(...posArr[i], ...posArr[j])
-          lineCount++
+          count++
         }
       }
     }
@@ -69,21 +68,15 @@ export default function EarthScene({ scrollProgress, mouse }) {
     }
   }, [])
 
-  const pointUniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uScrollProgress: { value: 0 },
-      uMouse: { value: new THREE.Vector2(0, 0) },
-    }),
-    []
-  )
+  const pointUniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uScrollProgress: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0, 0) },
+  }), [])
 
-  const lineUniforms = useMemo(
-    () => ({
-      uScrollProgress: { value: 0 },
-    }),
-    []
-  )
+  const lineUniforms = useMemo(() => ({
+    uScrollProgress: { value: 0 },
+  }), [])
 
   useFrame((state) => {
     const t = state.clock.elapsedTime
@@ -95,29 +88,41 @@ export default function EarthScene({ scrollProgress, mouse }) {
     pointUniforms.uMouse.value.set(mx, my)
     lineUniforms.uScrollProgress.value = scrollProgress.current
 
-    // Smooth cursor-driven tilt
+    // Smooth cursor-driven tilt + auto rotation
     const targetRotX = my * 0.15
-    const targetRotY = t * 0.04 + mx * 0.3
+    const targetRotY = t * 0.04 + mx * 0.25
     rotX.current = THREE.MathUtils.lerp(rotX.current, targetRotX, 0.03)
     rotY.current = THREE.MathUtils.lerp(rotY.current, targetRotY, 0.03)
 
     if (groupRef.current) {
       groupRef.current.rotation.x = rotX.current
       groupRef.current.rotation.y = rotY.current
-
-      const zoomOut = THREE.MathUtils.lerp(0, -1.2, Math.max(0, (scrollProgress.current - 0.5) * 2))
-      groupRef.current.position.z = zoomOut
+      const zoom = THREE.MathUtils.lerp(0, -1.0, Math.max(0, (scrollProgress.current - 0.5) * 2))
+      groupRef.current.position.z = zoom
     }
   })
 
   return (
     <group ref={groupRef}>
+      {/* Wireframe icosahedron — gives clear globe structure */}
+      <mesh>
+        <icosahedronGeometry args={[EARTH_RADIUS, 3]} />
+        <meshBasicMaterial wireframe color="#ffffff" transparent opacity={0.035} />
+      </mesh>
+
+      {/* Inner wireframe for depth */}
+      <mesh>
+        <icosahedronGeometry args={[EARTH_RADIUS * 0.97, 2]} />
+        <meshBasicMaterial wireframe color="#ffffff" transparent opacity={0.015} />
+      </mesh>
+
+      {/* Surface nodes */}
       <points>
         <bufferGeometry>
-          <bufferAttribute attach="attributes-position" array={positions} count={PARTICLE_COUNT} itemSize={3} />
-          <bufferAttribute attach="attributes-normal" array={normals} count={PARTICLE_COUNT} itemSize={3} />
-          <bufferAttribute attach="attributes-aRandom" array={randoms} count={PARTICLE_COUNT} itemSize={1} />
-          <bufferAttribute attach="attributes-aPhase" array={phases} count={PARTICLE_COUNT} itemSize={1} />
+          <bufferAttribute attach="attributes-position" array={positions} count={NODE_COUNT} itemSize={3} />
+          <bufferAttribute attach="attributes-normal" array={normals} count={NODE_COUNT} itemSize={3} />
+          <bufferAttribute attach="attributes-aRandom" array={randoms} count={NODE_COUNT} itemSize={1} />
+          <bufferAttribute attach="attributes-aPhase" array={phases} count={NODE_COUNT} itemSize={1} />
         </bufferGeometry>
         <shaderMaterial
           vertexShader={earthVertexShader}
@@ -128,10 +133,15 @@ export default function EarthScene({ scrollProgress, mouse }) {
         />
       </points>
 
-      {/* Sparse connection lines */}
+      {/* Connection lines — appear on scroll */}
       <lineSegments>
         <bufferGeometry>
-          <bufferAttribute attach="attributes-position" array={linePositions} count={linePositions.length / 3} itemSize={3} />
+          <bufferAttribute
+            attach="attributes-position"
+            array={linePositions}
+            count={linePositions.length / 3}
+            itemSize={3}
+          />
         </bufferGeometry>
         <shaderMaterial
           vertexShader={`
@@ -139,7 +149,7 @@ export default function EarthScene({ scrollProgress, mouse }) {
             varying float vAlpha;
             void main() {
               gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-              vAlpha = smoothstep(0.0, 0.5, uScrollProgress) * 0.08;
+              vAlpha = smoothstep(0.05, 0.4, uScrollProgress) * 0.12;
             }
           `}
           fragmentShader={`
@@ -153,12 +163,6 @@ export default function EarthScene({ scrollProgress, mouse }) {
           depthWrite={false}
         />
       </lineSegments>
-
-      {/* Faint wireframe outline */}
-      <mesh>
-        <sphereGeometry args={[EARTH_RADIUS * 1.002, 24, 24]} />
-        <meshBasicMaterial color="#ffffff" wireframe transparent opacity={0.015} />
-      </mesh>
     </group>
   )
 }
