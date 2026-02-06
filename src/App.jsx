@@ -49,12 +49,12 @@ export default function App() {
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5, duration: 1.2 }}
         >
-          <p className="text-xs md:text-sm tracking-[0.15em] text-white text-center">
+          <p className="text-sm md:text-base tracking-[0.15em] text-white text-center">
             Investing in the future of the web&mdash;freedom, privacy, immersion.
           </p>
           <a
             href="mailto:info@huxwell.co.uk"
-            className="text-[10px] md:text-xs tracking-[0.25em] uppercase text-white/60 hover:text-white transition-colors pointer-events-auto"
+            className="text-[7px] md:text-[8px] tracking-[0.25em] uppercase text-white/60 hover:text-white transition-colors pointer-events-auto"
           >
             info@huxwell.co.uk
           </a>
