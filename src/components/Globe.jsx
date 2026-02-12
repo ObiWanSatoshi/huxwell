@@ -74,7 +74,7 @@ export default function Globe({ scrollTarget, scrollProgress }) {
       uniform float uPixelRatio;
       varying float vAlpha;
       void main() {
-        float appear = smoothstep(aOrder * 0.5 - 0.02, aOrder * 0.5 + 0.02, uScroll);
+        float appear = smoothstep(aOrder * 0.5 + 0.005, aOrder * 0.5 + 0.04, uScroll);
         vAlpha = appear;
         vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
         gl_Position = projectionMatrix * mvPos;
@@ -306,6 +306,9 @@ export default function Globe({ scrollTarget, scrollProgress }) {
     linesMat.uniforms.uScroll.value = s
     orbitalMat.uniforms.uScroll.value = s
     orbLinesMat.uniforms.uScroll.value = s
+
+    // Fade rings in from 0→5% scroll so they're invisible at 0%
+    ringMaterial.opacity = Math.min(0.06, s * 1.2)
   })
 
   return (
