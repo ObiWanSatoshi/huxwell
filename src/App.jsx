@@ -29,8 +29,6 @@ export default function App() {
     return () => clearInterval(interval)
   }, [])
 
-  const scrolled = scrollPct >= 3
-
   return (
     <div className="w-screen h-screen bg-black overflow-hidden relative">
       {/* 3D Canvas */}
@@ -48,7 +46,7 @@ export default function App() {
 
       {/* UI Overlay */}
       <div className="fixed inset-0 z-10 pointer-events-none">
-        {/* Center — Hero logo + animated arrow, visible only at 0% scroll */}
+        {/* Center — Hero logo + animated arrow, fades on scroll */}
         <AnimatePresence>
           {scrollPct < 12 && (
             <motion.div
@@ -61,7 +59,7 @@ export default function App() {
               <motion.img
                 src="/eyes.png"
                 alt=""
-                className="w-16 h-16 md:w-24 md:h-24 select-none"
+                className="w-20 md:w-28 h-auto select-none"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 1.2, delay: 0.2 }}
@@ -91,12 +89,12 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Top Center — Brand (appears after scroll starts) */}
+        {/* Top Center — Brand (always visible) */}
         <motion.div
-          className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
+          className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center"
           initial={{ opacity: 0, y: -15 }}
-          animate={{ opacity: scrolled ? 1 : 0, y: scrolled ? 0 : -15 }}
-          transition={{ duration: 0.8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, delay: 0.3 }}
         >
           <img
             src="/huxwell.png"
@@ -104,19 +102,14 @@ export default function App() {
             className="h-14 md:h-20 w-auto"
             style={{ filter: 'brightness(0) invert(1)' }}
           />
-          <img
-            src="/eyes.png"
-            alt=""
-            className="w-7 h-7 md:w-9 md:h-9 opacity-30"
-          />
         </motion.div>
 
-        {/* Bottom Left — Scroll progress bar (appears after scroll starts) */}
+        {/* Bottom Left — Scroll progress bar */}
         <motion.div
           className="absolute bottom-8 left-8 md:bottom-12 md:left-12"
           initial={{ opacity: 0 }}
-          animate={{ opacity: scrolled ? 1 : 0 }}
-          transition={{ duration: 0.8 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.8, duration: 1 }}
         >
           <div className="flex items-center gap-3">
             <div className="w-14 md:w-24 h-px bg-white/8 relative overflow-hidden">
@@ -131,16 +124,16 @@ export default function App() {
           </div>
         </motion.div>
 
-        {/* Bottom Center — Tagline + Contact (appears after scroll starts) */}
+        {/* Bottom Center — Tagline + Contact (always visible) */}
         <motion.div
           className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
           initial={{ opacity: 0 }}
-          animate={{ opacity: scrolled ? 1 : 0 }}
-          transition={{ duration: 1, delay: scrolled ? 0.3 : 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 1.2 }}
         >
           <p
             className="text-sm md:text-base tracking-[0.15em] text-white text-center"
-            style={{ fontFamily: "'Source Serif 4', serif" }}
+            style={{ fontFamily: "'Source Serif 4', serif", fontWeight: 200 }}
           >
             Investing in the evolving web&mdash;verifiable, intelligent, embodied.
           </p>
