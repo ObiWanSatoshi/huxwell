@@ -289,9 +289,15 @@ export default function Globe({ scrollTarget, scrollProgress }) {
       )
     }
 
-    // Auto-rotation
+    // Auto-rotation + smooth scale-down when orbital nodes appear
     if (groupRef.current) {
       groupRef.current.rotation.y += 0.002
+
+      // Shrink globe smoothly from 60→80% scroll so orbital nodes clear header/footer
+      const s = scrollProgress?.current || 0
+      const targetScale =
+        s < 0.6 ? 1.0 : s > 0.8 ? 0.78 : 1.0 - ((s - 0.6) / 0.2) * 0.22
+      groupRef.current.scale.setScalar(targetScale)
     }
 
     // Update all shader uniforms
