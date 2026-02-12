@@ -67,24 +67,46 @@ export default function App() {
           />
         </motion.div>
 
-        {/* Center — Scroll hint, fades on scroll */}
+        {/* Center — Hero logo + animated arrow, fades on scroll */}
         <AnimatePresence>
-          {scrollPct < 3 && (
+          {scrollPct < 12 && (
             <motion.div
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0 flex flex-col items-center justify-center gap-8"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              animate={{ opacity: Math.max(0, 1 - scrollPct / 10) }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.4 }}
             >
-              <motion.p
-                className="text-white/10 text-[10px] md:text-xs tracking-[0.5em] uppercase select-none"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 2.8, duration: 1.2 }}
+              <motion.img
+                src="/eyes.png"
+                alt=""
+                className="w-16 h-16 md:w-24 md:h-24 select-none"
+                style={{ filter: 'invert(1) brightness(2)' }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 0.7, scale: 1 }}
+                transition={{ duration: 1.2, delay: 0.2 }}
+              />
+              <motion.svg
+                width="20"
+                height="12"
+                viewBox="0 0 20 12"
+                className="select-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.15, y: [0, 5, 0] }}
+                transition={{
+                  opacity: { delay: 2, duration: 1 },
+                  y: { delay: 2, duration: 1.8, repeat: Infinity, ease: 'easeInOut' },
+                }}
               >
-                Scroll to explore
-              </motion.p>
+                <path
+                  d="M2 2 L10 10 L18 2"
+                  stroke="white"
+                  strokeWidth="1.5"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </motion.svg>
             </motion.div>
           )}
         </AnimatePresence>
