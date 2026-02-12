@@ -1,9 +1,34 @@
-import { Suspense } from 'react'
+import { Suspense, useRef, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Globe from './components/Globe'
 
 export default function App() {
+  const scrollTarget = useRef(0)
+  const scrollProgress = useRef(0)
+  const [scrollPct, setScrollPct] = useState(0)
+
+  // Wheel → scroll progress (0→1)
+  useEffect(() => {
+    const handleWheel = (e) => {
+      e.preventDefault()
+      scrollTarget.current = Math.max(
+        0,
+        Math.min(1, scrollTarget.current + e.deltaY * 0.0008),
+      )
+    }
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    return () => window.removeEventListener('wheel', handleWheel)
+  }, [])
+
+  // Poll scroll progress for UI display
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setScrollPct(Math.round(scrollProgress.current * 100))
+    }, 80)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <div className="w-screen h-screen bg-black overflow-hidden relative">
       {/* 3D Canvas */}
@@ -15,7 +40,7 @@ export default function App() {
       >
         <color attach="background" args={['#000000']} />
         <Suspense fallback={null}>
-          <Globe />
+          <Globe scrollTarget={scrollTarget} scrollProgress={scrollProgress} />
         </Suspense>
       </Canvas>
 
@@ -40,6 +65,48 @@ export default function App() {
             className="w-7 h-7 md:w-9 md:h-9 opacity-30"
             style={{ filter: 'invert(1) brightness(2)' }}
           />
+        </motion.div>
+
+        {/* Center — Scroll hint, fades on scroll */}
+        <AnimatePresence>
+          {scrollPct < 3 && (
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <motion.p
+                className="text-white/10 text-[10px] md:text-xs tracking-[0.5em] uppercase select-none"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2.8, duration: 1.2 }}
+              >
+                Scroll to explore
+              </motion.p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Bottom Left — Scroll progress bar */}
+        <motion.div
+          className="absolute bottom-8 left-8 md:bottom-12 md:left-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.8, duration: 1 }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-14 md:w-24 h-px bg-white/8 relative overflow-hidden">
+              <div
+                className="absolute top-0 left-0 h-full bg-white/30 transition-[width] duration-150"
+                style={{ width: `${scrollPct}%` }}
+              />
+            </div>
+            <span className="text-[9px] md:text-[10px] text-white/20 font-mono tabular-nums">
+              {String(scrollPct).padStart(3, '0')}
+            </span>
+          </div>
         </motion.div>
 
         {/* Bottom Center — Tagline + Contact */}
