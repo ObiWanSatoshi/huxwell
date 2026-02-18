@@ -20,12 +20,21 @@ body,
   background: #000000;
   color: #ffffff;
   font-family: 'Inter Light', sans-serif;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 .font-cinzel {
   font-family: 'Cinzel Decorative', cursive;
+}
+
+.footer-tagline {
+  font-family: 'Roboto', 'Inter Light', sans-serif;
+  letter-spacing: 0.06em;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 14px rgba(255, 255, 255, 0.11);
 }
 
 ::-webkit-scrollbar {

@@ -6,27 +6,118 @@ import Globe from './components/Globe'
 export default function App() {
   const scrollTarget = useRef(0)
   const scrollProgress = useRef(0)
+  const mouse = useRef({ x: 0, y: 0 })
   const [scrollPct, setScrollPct] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
+  const [ctaSweepSignal, setCtaSweepSignal] = useState(0)
 
-  // Wheel → scroll progress (0→1)
+  const maxDpr = reducedMotion ? 1 : isMobile ? 1.25 : 2
+
   useEffect(() => {
-    const handleWheel = (e) => {
-      e.preventDefault()
-      scrollTarget.current = Math.max(
-        0,
-        Math.min(1, scrollTarget.current + e.deltaY * 0.0008),
-      )
+    const mobileQuery = window.matchMedia('(max-width: 768px), (pointer: coarse)')
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+    const updateEnvironment = () => {
+      setIsMobile(mobileQuery.matches || navigator.maxTouchPoints > 0)
+      setReducedMotion(motionQuery.matches)
     }
-    window.addEventListener('wheel', handleWheel, { passive: false })
-    return () => window.removeEventListener('wheel', handleWheel)
+
+    updateEnvironment()
+
+    if (mobileQuery.addEventListener) {
+      mobileQuery.addEventListener('change', updateEnvironment)
+      motionQuery.addEventListener('change', updateEnvironment)
+      return () => {
+        mobileQuery.removeEventListener('change', updateEnvironment)
+        motionQuery.removeEventListener('change', updateEnvironment)
+      }
+    }
+
+    mobileQuery.addListener(updateEnvironment)
+    motionQuery.addListener(updateEnvironment)
+    return () => {
+      mobileQuery.removeListener(updateEnvironment)
+      motionQuery.removeListener(updateEnvironment)
+    }
   }, [])
 
-  // Poll scroll progress for UI display
   useEffect(() => {
-    const interval = setInterval(() => {
-      setScrollPct(Math.round(scrollProgress.current * 100))
-    }, 80)
-    return () => clearInterval(interval)
+    const handlePointerMove = (e) => {
+      mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1
+      mouse.current.y = -((e.clientY / window.innerHeight) * 2 - 1)
+    }
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    return () => window.removeEventListener('pointermove', handlePointerMove)
+  }, [])
+
+  // Wheel/touch/keyboard → scroll progress (0→1)
+  useEffect(() => {
+    if (reducedMotion) {
+      scrollTarget.current = 0.2
+      scrollProgress.current = 0.2
+      return
+    }
+
+    const clamp01 = (value) => Math.max(0, Math.min(1, value))
+
+    const handleWheel = (e) => {
+      e.preventDefault()
+      scrollTarget.current = clamp01(scrollTarget.current + e.deltaY * 0.0008)
+    }
+
+    let touchY = 0
+    const handleTouchStart = (e) => {
+      if (!e.touches.length) return
+      touchY = e.touches[0].clientY
+    }
+    const handleTouchMove = (e) => {
+      if (!e.touches.length) return
+      const nextY = e.touches[0].clientY
+      const deltaY = touchY - nextY
+      touchY = nextY
+      scrollTarget.current = clamp01(scrollTarget.current + deltaY * 0.0014)
+      e.preventDefault()
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault()
+        scrollTarget.current = clamp01(scrollTarget.current + 0.06)
+      } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault()
+        scrollTarget.current = clamp01(scrollTarget.current - 0.06)
+      }
+    }
+
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+    window.addEventListener('touchmove', handleTouchMove, { passive: false })
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [reducedMotion])
+
+  // Keep progress text synced without interval polling
+  useEffect(() => {
+    let frame = 0
+    let last = -1
+
+    const tick = () => {
+      const next = Math.round(scrollProgress.current * 100)
+      if (next !== last) {
+        last = next
+        setScrollPct(next)
+      }
+      frame = window.requestAnimationFrame(tick)
+    }
+
+    frame = window.requestAnimationFrame(tick)
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   return (
@@ -34,13 +125,20 @@ export default function App() {
       {/* 3D Canvas */}
       <Canvas
         camera={{ position: [0, 0, 6], fov: 45 }}
-        dpr={[1, 2]}
-        gl={{ antialias: true, alpha: false }}
+        dpr={[1, maxDpr]}
+        gl={{ antialias: !isMobile, alpha: false, powerPreference: 'high-performance' }}
         style={{ position: 'absolute', inset: 0 }}
       >
         <color attach="background" args={['#000000']} />
         <Suspense fallback={null}>
-          <Globe scrollTarget={scrollTarget} scrollProgress={scrollProgress} />
+          <Globe
+            scrollTarget={scrollTarget}
+            scrollProgress={scrollProgress}
+            isMobile={isMobile}
+            reducedMotion={reducedMotion}
+            ctaSweepSignal={ctaSweepSignal}
+            mouse={mouse}
+          />
         </Suspense>
       </Canvas>
 
@@ -131,15 +229,14 @@ export default function App() {
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5, duration: 1.2 }}
         >
-          <p
-            className="text-sm md:text-base tracking-[0.15em] text-white text-center"
-            style={{ fontFamily: "'Source Serif 4', serif", fontWeight: 200 }}
-          >
+          <p className="footer-tagline text-sm md:text-base text-center">
             Investing in the evolving web&mdash;verifiable, intelligent, embodied.
           </p>
           <a
             href="mailto:info@huxwell.co.uk"
-            className="text-[7px] md:text-[8px] tracking-[0.25em] uppercase text-white/60 hover:text-white transition-colors pointer-events-auto"
+            className="text-[8px] md:text-[9px] tracking-[0.24em] uppercase text-white/65 hover:text-white transition-colors pointer-events-auto"
+            onMouseEnter={() => setCtaSweepSignal((v) => v + 1)}
+            onFocus={() => setCtaSweepSignal((v) => v + 1)}
           >
             info@huxwell.co.uk
           </a>
