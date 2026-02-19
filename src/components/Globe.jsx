@@ -471,6 +471,7 @@ export default function Globe({
       scrollTarget.current = staticProgress
       if (groupRef.current) {
         groupRef.current.scale.setScalar(staticScale)
+        groupRef.current.position.y = 0
       }
       surfaceMat.uniforms.uScroll.value = staticProgress
       surfaceMat.uniforms.uTime.value = state.clock.elapsedTime
@@ -513,7 +514,9 @@ export default function Globe({
       const endScale = isMobile ? 0.72 : 0.78
       const scaleT = THREE.MathUtils.clamp((s - 0.6) / 0.2, 0, 1)
       const targetScale = THREE.MathUtils.lerp(baseScale, endScale, scaleT)
+      const mobileCenterLift = isMobile ? THREE.MathUtils.smoothstep(s, 0.55, 0.95) * 0.16 : 0
       groupRef.current.scale.setScalar(targetScale)
+      groupRef.current.position.y = mobileCenterLift
     }
 
     // Update all shader uniforms
