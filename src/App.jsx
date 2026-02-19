@@ -11,6 +11,10 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [ctaSweepSignal, setCtaSweepSignal] = useState(0)
+  const isTouchUi = isMobile
+  const cameraPosition = isMobile ? [0, 0, 8] : [0, 0, 6]
+  const scrollHintPath = isTouchUi ? 'M2 10 L10 2 L18 10' : 'M2 2 L10 10 L18 2'
+  const scrollHintBob = isTouchUi ? [0, -5, 0] : [0, 5, 0]
 
   const maxDpr = reducedMotion ? 1 : isMobile ? 1.25 : 2
 
@@ -124,7 +128,7 @@ export default function App() {
     <div className="w-screen h-screen bg-black overflow-hidden relative">
       {/* 3D Canvas */}
       <Canvas
-        camera={{ position: [0, 0, 6], fov: 45 }}
+        camera={{ position: cameraPosition, fov: 45 }}
         dpr={[1, maxDpr]}
         gl={{ antialias: !isMobile, alpha: false, powerPreference: 'high-performance' }}
         style={{ position: 'absolute', inset: 0 }}
@@ -168,14 +172,14 @@ export default function App() {
                 viewBox="0 0 20 12"
                 className="select-none"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.15, y: [0, 5, 0] }}
+                animate={{ opacity: 0.15, y: scrollHintBob }}
                 transition={{
                   opacity: { delay: 2, duration: 1 },
                   y: { delay: 2, duration: 1.8, repeat: Infinity, ease: 'easeInOut' },
                 }}
               >
                 <path
-                  d="M2 2 L10 10 L18 2"
+                  d={scrollHintPath}
                   stroke="white"
                   strokeWidth="1.5"
                   fill="none"

@@ -466,10 +466,11 @@ export default function Globe({
 
     if (reducedMotion) {
       const staticProgress = 0.22
+      const staticScale = isMobile ? 0.9 : 1
       scrollProgress.current = staticProgress
       scrollTarget.current = staticProgress
       if (groupRef.current) {
-        groupRef.current.scale.setScalar(1)
+        groupRef.current.scale.setScalar(staticScale)
       }
       surfaceMat.uniforms.uScroll.value = staticProgress
       surfaceMat.uniforms.uTime.value = state.clock.elapsedTime
@@ -508,8 +509,10 @@ export default function Globe({
 
       // Shrink globe smoothly from 60→80% scroll so orbital nodes clear header/footer
       const s = scrollProgress?.current || 0
-      const targetScale =
-        s < 0.6 ? 1.0 : s > 0.8 ? 0.78 : 1.0 - ((s - 0.6) / 0.2) * 0.22
+      const baseScale = isMobile ? 0.9 : 1.0
+      const endScale = isMobile ? 0.72 : 0.78
+      const scaleT = THREE.MathUtils.clamp((s - 0.6) / 0.2, 0, 1)
+      const targetScale = THREE.MathUtils.lerp(baseScale, endScale, scaleT)
       groupRef.current.scale.setScalar(targetScale)
     }
 
